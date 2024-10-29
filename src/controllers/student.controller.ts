@@ -40,6 +40,8 @@ export const updateProfilePic = async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
 
+    console.log(req.files);
+
     if (!req.files || !req.files.profile) {
       return res.status(400).json({ error: "No profile picture uploaded." });
     }
@@ -88,6 +90,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
         name: true,
         email: true,
         profilePic: true,
+        studentId: true,
       },
     });
 

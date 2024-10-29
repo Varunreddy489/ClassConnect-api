@@ -1,7 +1,6 @@
-
 import dotenv from "dotenv";
 import { SendEmailParams } from "../types/Server-types";
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 dotenv.config();
 
 export const transporter = nodemailer.createTransport({

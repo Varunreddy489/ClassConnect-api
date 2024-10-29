@@ -2,12 +2,11 @@ import { UploadedFile } from "express-fileupload";
 import { generateRandomNumber, imageValidator } from "../utils/imageHelper";
 
 export const imageService = async (
-  userId: number,
+  id: any,
   model: any,
   profile: UploadedFile | UploadedFile[]
 ) => {
   try {
-    // Validate image
     const message = Array.isArray(profile)
       ? imageValidator(profile[0].size, profile[0].mimetype)
       : imageValidator(profile?.size, profile?.mimetype);
@@ -36,9 +35,8 @@ export const imageService = async (
       });
     }
 
-    // Update the student's profilePic in the database
     const updatedProfile = await model.update({
-      where: { id: Number(userId) },
+      where: { id: id },
       data: { profilePic: imgName },
     });
 
