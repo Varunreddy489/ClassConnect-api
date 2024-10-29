@@ -25,6 +25,115 @@ enum JoinStatus {
   REJECTED
 }
 
+model Student {
+  id                     Int            @id @default(autoincrement())
+  name                   String
+  email                  String         @unique
+  password               String
+  phoneNumber            String?
+  studentId              String         @unique
+  year                   String?
+  department             String?
+  semester               String?
+  course                 String?
+  profilePic             String?
+  collegeId              Int
+  role                   Role           @default(STUDENT)
+  college                College        @relation(fields: [collegeId], references: [id])
+  resetPasswordToken     String?
+  resetPasswordExpiresAt DateTime       @default(now())
+  clubs                  Club[]         @relation("ClubMembership")
+  createdClubs           Club[]         @relation("ClubCreator")
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  Message                Message[]
+  JoinRequest            JoinRequest[]
+  Notification           Notification[]
+  notifications          Notification[] @relation("StudentNotifications")
+}
+
+enum NotificationType {
+  JOIN_REQUEST
+  CLUB_REQUEST_ACCEPTED
+  CLUB_REQUEST_REJECTED
+  REMOVED_FROM_CLUB
+  EVENTS
+  CLUB_CREATED
+  GENERAL_ANNOUNCEMENT
+}
+
+model Notification {
+  id            String           @id @default(cuid())
+  type          NotificationType
+  content       String
+  recipientId   Int
+  isRead        Boolean          @default(false)
+  senderId      Int?
+  clubId        String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  student       Student?         @relation("StudentNotifications", fields: [recipientId], references: [id])
+  Student       Student?         @relation(fields: [studentId], references: [id])
+  studentId     Int?
+  joinRequestId Int?
+  joinRequest   JoinRequest?     @relation("NotificationToJoinRequest", fields: [joinRequestId], references: [id])
+  club          Club?            @relation(fields: [clubId], references: [id])
+}
+
+model JoinRequest {
+  id            Int            @id @default(autoincrement())
+  studentId     Int
+  student       Student        @relation(fields: [studentId], references: [id])
+  clubId        String
+  club          Club           @relation(fields: [clubId], references: [id])
+  status        JoinStatus     @default(PENDING)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  notifications Notification[] @relation("NotificationToJoinRequest") // Relation name matches Notification model
+}
+
+model Club {
+  id           String          @id @default(cuid())
+  name         String          @unique
+  description  String?
+  creatorId    Int
+  creator      Student         @relation("ClubCreator", fields: [creatorId], references: [id])
+  members      Student[]       @relation("ClubMembership")
+  messages     Conversations[] @relation("ClubMessages")
+  profilePic   String?
+  collegeId    Int
+  college      College         @relation(fields: [collegeId], references: [id])
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @default(now())
+  JoinRequest  JoinRequest[]
+  Notification Notification[]
+}
+
+model Conversations {
+  id         Int       @id @default(autoincrement())
+  content    String
+  senderId   Int
+  senderType Role
+  clubId     String
+  club       Club      @relation("ClubMessages", fields: [clubId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now())
+  Message    Message[]
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  conversationId Int
+  conversation   Conversations @relation(fields: [conversationId], references: [id])
+  senderId       Int
+  sender         Student       @relation(fields: [senderId], references: [id])
+  body           String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  teacherId      Int?
+  Teacher        Teacher?      @relation(fields: [teacherId], references: [id])
+}
+
 model Admin {
   id                     Int      @id @default(autoincrement())
   name                   String
@@ -74,81 +183,4 @@ model Teacher {
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
   Message                Message[]
-}
-
-model Student {
-  id                     Int           @id @default(autoincrement())
-  name                   String
-  email                  String        @unique
-  password               String
-  phoneNumber            String?
-  studentId              String        @unique
-  year                   String?
-  department             String?
-  semester               String?
-  course                 String?
-  profilePic             String?
-  collegeId              Int
-  role                   Role          @default(STUDENT)
-  college                College       @relation(fields: [collegeId], references: [id])
-  resetPasswordToken     String?
-  resetPasswordExpiresAt DateTime      @default(now())
-  clubs                  Club[]        @relation("ClubMembership")
-  createdClubs           Club[]        @relation("ClubCreator")
-  createdAt              DateTime      @default(now())
-  updatedAt              DateTime      @updatedAt
-  Message                Message[]
-  JoinRequest            JoinRequest[]
-}
-
-model Club {
-  id          String          @id @default(cuid())
-  name        String          @unique
-  description String?
-  creatorId   Int
-  creator     Student         @relation("ClubCreator", fields: [creatorId], references: [id])
-  members     Student[]       @relation("ClubMembership")
-  messages    Conversations[] @relation("ClubMessages")
-  profilePic  String?
-  collegeId   Int
-  college     College         @relation(fields: [collegeId], references: [id])
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @default(now())
-  JoinRequest JoinRequest[]
-}
-
-model Conversations {
-  id         Int       @id @default(autoincrement())
-  content    String
-  senderId   Int
-  senderType Role
-  clubId     String
-  club       Club      @relation("ClubMessages", fields: [clubId], references: [id])
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @default(now())
-  Message    Message[]
-}
-
-model Message {
-  id             String        @id @default(cuid())
-  conversationId Int
-  conversation   Conversations @relation(fields: [conversationId], references: [id])
-  senderId       Int
-  sender         Student       @relation(fields: [senderId], references: [id])
-  body           String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  teacherId      Int?
-  Teacher        Teacher?      @relation(fields: [teacherId], references: [id])
-}
-
-model JoinRequest {
-  id        Int        @id @default(autoincrement())
-  studentId Int
-  student   Student    @relation(fields: [studentId], references: [id])
-  clubId    String // Changed from Int to String to match the Club id type
-  club      Club       @relation(fields: [clubId], references: [id])
-  status    JoinStatus @default(PENDING)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
 }
