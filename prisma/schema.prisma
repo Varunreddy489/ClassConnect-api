@@ -132,6 +132,8 @@ model Message {
   updatedAt      DateTime      @updatedAt
   teacherId      Int?
   Teacher        Teacher?      @relation(fields: [teacherId], references: [id])
+  fileUrl        String?
+  fileType       String?
 }
 
 model Admin {

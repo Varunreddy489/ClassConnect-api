@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
+
 import prisma from "../db/db.config";
 import { sendMessage } from "../services";
 import { getClubSocketId, io } from "../connection/socket";
+import { UploadedFile } from "express-fileupload";
+import { fileService } from "../services/file.service";
 
 enum Role {
   ADMIN = "ADMIN",
@@ -72,6 +75,25 @@ export const getAllMessages = async (req: Request, res: Response) => {
     return res.status(200).json({ messages });
   } catch (error) {
     console.error("Error in getAllMessages:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const sendFiles = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const sender = req.user.id;
+    const file = req.files?.file as UploadedFile;
+
+    if (!file) {
+      return res.status(400).send({ error: "File is required" });
+    }
+
+    const sendFile = await fileService(id, prisma.message, file);
+
+    return res.status(200).json({ sendFile });
+  } catch (error) {
+    console.error("Error in sendDocs:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

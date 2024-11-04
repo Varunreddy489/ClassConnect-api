@@ -30,7 +30,7 @@ app.use("/api", apiRoutes);
 app.get("/", async (req: Request, res: Response) => {
   res.send({ message: "health Ok!" });
 });
-
+  
 server.listen(PORT, () => {
   console.log(`Server-${PORT}`);
 });

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { v4 as uuidv4 } from "uuid";
 
-import { supportedTypes } from "../config/imageType";
+import { supportedTypes } from "../config/supportedTypes";
 
 export const imageValidator = (size: number, mime: string) => {
   if (bytesToMb(size) > 5) {
