@@ -53,7 +53,7 @@ export const getAllMessages = async (req: Request, res: Response) => {
     });
 
     if (!club) {
-      return res.status(404).json({ error: "Club not found" });
+      res.status(404).json({ error: "Club not found" });
     }
 
     const messages = await prisma.message.findMany({
@@ -72,7 +72,7 @@ export const getAllMessages = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json({ messages });
+    res.status(200).json({ messages });
   } catch (error) {
     console.error("Error in getAllMessages:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -81,17 +81,21 @@ export const getAllMessages = async (req: Request, res: Response) => {
 
 export const sendFiles = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const sender = req.user.id;
+    const { clubId } = req.params;
+    const senderId = req.user.id;
     const file = req.files?.file as UploadedFile;
 
-    if (!file) {
-      return res.status(400).send({ error: "File is required" });
+    if (!clubId) {
+      res.status(400).json({ error: "Message clubId is required" });
     }
 
-    const sendFile = await fileService(id, prisma.message, file);
+    if (!file) {
+      res.status(400).send({ error: "File is required" });
+    }
 
-    return res.status(200).json({ sendFile });
+    const sendFile = await fileService(clubId, senderId, prisma.message, file);
+
+    res.status(200).json({ sendFile, senderId });
   } catch (error) {
     console.error("Error in sendDocs:", error);
     res.status(500).json({ error: "Internal server error" });

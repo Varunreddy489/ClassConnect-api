@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express from "express";
 
 import {
   getMe,
@@ -10,7 +10,6 @@ import {
   getClubById,
   getAllClubs,
   createAdmin,
-  studentLogin,
   removeMember,
   teacherLogin,
   createStudent,
@@ -35,11 +34,14 @@ import {
   getAllMessages,
   markNotificationAsRead,
   deleteNotification,
+  studentLogin,
+  sendFiles,
+  removeMessages,
 } from "../controllers";
 
 import { checkIsAuth } from "../middleware/CheckAuth";
 
-const router = Router();
+const router = express.Router();
 
 // ^ 1 Auth Routes
 
@@ -89,6 +91,7 @@ router.post("/club/join/:clubId", checkIsAuth, joinClubRequest);
 router.get("/club/join/:clubId", checkIsAuth, getAllJoinRequests);
 router.post("/club/accept/:clubId", checkIsAuth, acceptJoinRequest);
 router.post("/club/reject/:clubId", checkIsAuth, rejectJoinRequest);
+router.delete("/club/-/:clubId", checkIsAuth, removeMessages);
 
 //  Todo
 
@@ -97,6 +100,7 @@ router.delete("/club/remove/:clubId", checkIsAuth, removeMember);
 
 // ^ 6 Message Routes
 
+router.post("/club/file/:clubId", checkIsAuth, sendFiles);
 router.post("/club/message/:clubId", checkIsAuth, sendMessages);
 router.get("/club/message/:clubId", checkIsAuth, getAllMessages);
 

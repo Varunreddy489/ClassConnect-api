@@ -5,5 +5,8 @@ export const supportedTypes = {
   "image/svg": "svg",
   "image/gif": "gif",
   "image/webp": "webp",
-
+  "application/pdf": "pdf",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "docx",
 };

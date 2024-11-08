@@ -1,9 +1,49 @@
+// import { UploadedFile } from "express-fileupload";
+// import { fileValidator, uploadFile } from "../utils/fileHelper";
+// import { generateRandomNumber } from "../utils/imageHelper";
+
+// export const fileService = async (
+//   clubId: any,
+//   model: any,
+//   file: UploadedFile | UploadedFile[]
+// ) => {
+//   try {
+//     const validationMessage = Array.isArray(file)
+//       ? fileValidator(file[0].size, file[0].mimetype)
+//       : fileValidator(file?.size, file?.mimetype);
+
+//     if (validationMessage) {
+//       return { error: { file: validationMessage } };
+//     }
+
+//     const fileName = await uploadFile(file);
+//     if (!fileName) {
+//       return { error: { file: "File upload failed" } };
+//     }
+
+//     const newMessage = await model.create({
+//       data: {
+//         clubId: clubId,
+//         fileUrl: fileName,
+//         body: "",
+//       },
+//     });
+
+//     return { data: newMessage };
+//   } catch (error) {
+//     console.error("Error in fileService:", error);
+//     throw new Error("Internal server error");
+//   }
+// };
+
 import { UploadedFile } from "express-fileupload";
-import { fileValidator } from "../utils/fileHelper";
+import { fileValidator, uploadFile } from "../utils/fileHelper";
 import { generateRandomNumber } from "../utils/imageHelper";
+import prisma from "../db/db.config";
 
 export const fileService = async (
-  id: any,
+  clubId: any,
+  senderId: number,
   model: any,
   file: UploadedFile | UploadedFile[]
 ) => {
@@ -12,35 +52,59 @@ export const fileService = async (
       ? fileValidator(file[0].size, file[0].mimetype)
       : fileValidator(file?.size, file?.mimetype);
 
-    if (validationMessage !== null) {
+    if (validationMessage) {
       return { error: { file: validationMessage } };
     }
 
-    const fileExt = Array.isArray(file)
-      ? file[0]?.name.split(".")
-      : file?.name.split(".");
-    const fileName = generateRandomNumber() + "." + fileExt[1];
-    const uploadPath = process.cwd() + "/public/files/" + fileName;
+    const fileName = await uploadFile(file);
+    if (!fileName) {
+      return { error: { file: "File upload failed" } };
+    }
 
-    // Move the file to the destination
-    if (Array.isArray(file)) {
-      file.forEach((file: UploadedFile) => {
-        file.mv(uploadPath, (err: any) => {
-          if (err) throw err;
-        });
-      });
-    } else {
-      (file as UploadedFile).mv(uploadPath, (err: any) => {
-        if (err) throw err;
+    // Ensure the club exists
+    const club = await prisma.club.findUnique({
+      where: { id: clubId },
+    });
+    if (!club) {
+      throw new Error("Club not found");
+    }
+
+    // Ensure the user exists
+    const user = await prisma.student.findUnique({
+      where: { id: senderId },
+    });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Find the existing conversation for the club, or create a new one
+    let conversation = await prisma.conversations.findFirst({
+      where: { clubId },
+    });
+
+    if (!conversation) {
+      conversation = await prisma.conversations.create({
+        data: {
+          clubId,
+          senderId: senderId,
+          content: "File shared", // You can customize the content
+          senderType: "STUDENT", // "STUDENT", "TEACHER", etc.
+        },
       });
     }
 
-    const updatedMessage = await model.update({
-      where: { id: id },
-      data: { fileUrl: fileName },
+    // Create a message and link it to the conversation
+    const newMessage = await prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        senderId: senderId,
+        body: "", // You can also add a message body if needed
+        fileUrl: fileName,
+        fileType: Array.isArray(file) ? file[0].mimetype : file?.mimetype,
+      },
     });
 
-    return { data: updatedMessage };
+    return { data: newMessage };
   } catch (error) {
     console.error("Error in fileService:", error);
     throw new Error("Internal server error");

@@ -3,6 +3,7 @@ import path from "node:path";
 import { v4 as uuidv4 } from "uuid";
 
 import { supportedTypes } from "../config/supportedTypes";
+import { UploadedFile } from "express-fileupload";
 
 export const imageValidator = (size: number, mime: string) => {
   if (bytesToMb(size) > 5) {
@@ -32,36 +33,21 @@ export const removeImage = (imageName: string) => {
   }
 };
 
-export const uploadImage =  async (image: any): Promise<string | null>  => {
-  try {
-    if (!image || !image.name) {
-      throw new Error("Invalid image object");
-    }
+// export const uploadImage = async (image: UploadedFile): Promise<string | null> => {
+//   try {
+//     if (!image || !image.name) throw new Error("Invalid image object");
 
-    const validationError = imageValidator(image.size, image.mimetype);
-    if (validationError) {
-      throw new Error(validationError);
-    }
+//     const validationError = imageValidator(image.size, image.mimetype);
+//     if (validationError) throw new Error(validationError);
 
-    //  get the file extension
-    const ext = path.extname(image.name);
-    const imageName = generateRandomNumber() + ext;
-    const uploadPath = path.join(process.cwd(), "public", "images", imageName);
+//     const ext = path.extname(image.name);
+//     const imageName = `${generateRandomNumber()}${ext}`;
+//     const uploadPath = path.join(process.cwd(), "public", "images", imageName);
 
-    // Asynchronously move the image to the destination folder
-    await new Promise((resolve, reject) => {
-      image.mv(uploadPath, (err: Error) => {
-        if (err) {
-          reject("Image upload failed: " + err.message);
-        } else {
-          resolve(null);
-        }
-      });
-    });
-
-    return imageName;
-  } catch (error) {
-    console.error("Error during image upload:", error);
-    return null;
-  }
-};
+//     await fs.promises.writeFile(uploadPath, image.data);
+//     return imageName;
+//   } catch (error) {
+//     console.error("Error during image upload:", error);
+//     return null;
+//   }
+// };
