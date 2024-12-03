@@ -1,14 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../db/db.config";
 
-// export const sendNotifications=async(req:Request,res:Response)=>{
-//   try {
-
-//   } catch (error) {
-//     console.error("error in sendNotifications:", error);
-//     return res.status(500).json({ error: "Internal Server Error" });
-//   }
-// }
 
 export const getAllNotifications = async (req: Request, res: Response) => {
   try {
@@ -32,10 +24,10 @@ export const getAllNotifications = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json(notifications);
+     res.status(200).json(notifications);
   } catch (error) {
     console.error("error in getAllNotifications:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -52,10 +44,10 @@ export const markNotificationAsRead = async (req: Request, res: Response) => {
       },
     });
 
-    return res.json(notification);
+     res.json(notification);
   } catch (error) {
     console.error("error in getAllNotifications:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -69,9 +61,9 @@ export const deleteNotification = async (req: Request, res: Response) => {
       },
     });
 
-    return res.json(data);
+     res.json(data);
   } catch (error) {
     console.error("error in getAllNotifications:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+     res.status(500).json({ error: "Internal Server Error" });
   }
 };

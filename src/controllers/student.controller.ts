@@ -43,7 +43,8 @@ export const updateProfilePic = async (req: Request, res: Response) => {
     console.log(req.files);
 
     if (!req.files || !req.files.profile) {
-      return res.status(400).json({ error: "No profile picture uploaded." });
+      res.status(400).json({ error: "No profile picture uploaded." });
+      return;
     }
 
     const profile = req.files.profile;
@@ -51,10 +52,10 @@ export const updateProfilePic = async (req: Request, res: Response) => {
     const result = await imageService(userId, prisma.student, profile);
 
     if (result.error) {
-      return res.status(400).json({ errors: result.error });
+      res.status(400).json({ errors: result.error });
     }
 
-    return res.status(201).json({
+    res.status(201).json({
       message: "Profile picture updated successfully",
       data: result.data,
     });
@@ -72,7 +73,7 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     const result = await profileService(userId, prisma.student, body);
 
-    return res.status(201).json({
+    res.status(201).json({
       message: "Profile updated successfully",
       data: result,
     });
@@ -94,7 +95,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json({ students });
+    res.status(200).json({ students });
   } catch (error) {
     console.log("error in getAllStudents:", error);
     res.status(404).json({ error: "internal server error" });

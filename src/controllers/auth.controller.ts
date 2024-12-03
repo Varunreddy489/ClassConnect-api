@@ -1,15 +1,15 @@
 import bcrypt from "bcryptjs";
-import { Request, Response } from "express";
 
 import prisma from "../db/db.config";
 import { genTokenAndCookie } from "../utils/genToken";
+import { Request, Response } from "express";
 
 export const createAdmin = async (req: Request, res: Response) => {
   try {
     const { name, email, password, phoneNumber, collegeName } = req.body;
 
     if (!name || !email || !password) {
-      return res
+      res
         .status(400)
         .json({ error: "Name, email, and password are required." });
     }
@@ -64,17 +64,16 @@ export const createStudent = async (req: Request, res: Response) => {
       !department ||
       !studentId
     ) {
-      return res.status(404).json({ error: "All fields are required" });
+      res.status(404).json({ error: "All fields are required" });
     }
 
     const findEmail = await prisma.student.findUnique({ where: { email } });
     const findStudent = await prisma.student.findUnique({ where: { email } });
 
-    if (findEmail)
-      return res.status(404).json({ error: "Email already exists" });
+    if (findEmail) res.status(404).json({ error: "Email already exists" });
 
     if (findStudent)
-      return res.status(404).json({ error: "Student with this Id Exists" });
+      res.status(404).json({ error: "Student with this Id Exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -97,29 +96,35 @@ export const createStudent = async (req: Request, res: Response) => {
     // Generate token and set it in the cookie
     genTokenAndCookie(id, role, res);
 
-    return res.status(200).json(newStudent);
+    res.status(200).json(newStudent);
   } catch (error) {
     console.log("error in createStudent:", error);
     res.status(404).json({ error: "internal server error" });
   }
 };
 
-export const studentLogin = async (req: Request, res: Response) => {
+export const studentLogin = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { email, password } = req.body;
 
     const checkEmail = await prisma.student.findUnique({ where: { email } });
-
-    if (!checkEmail)
-      return res.status(404).json({ error: "invalid email or password" });
+    if (!checkEmail) {
+      res.status(404).json({ error: "Invalid email or password" });
+      return;
+    }
 
     const checkPassword = await bcrypt.compare(password, checkEmail.password);
-
+    
     if (!checkPassword) {
-      return res.status(400).json({ error: "invalid email or password" });
+      res.status(400).json({ error: "Invalid email or password" });
+      return;
     }
 
     const { id, role } = checkEmail;
+
     genTokenAndCookie(id, role, res);
 
     res.status(200).json({
@@ -130,8 +135,8 @@ export const studentLogin = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.log("error in studentLogin:", error);
-    res.status(404).json({ error });
+    console.log("Error in studentLogin:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -168,10 +173,10 @@ export const getMe = async (req: Request, res: Response) => {
     });
 
     if (!isStudent) {
-      return res.status(404).json({ error: "Student not found" });
+      res.status(404).json({ error: "Student not found" });
     }
 
-    return res.status(200).json({ isStudent });
+    res.status(200).json({ isStudent });
   } catch (error) {
     console.log("error in getAllStudents:", error);
     res.status(404).json({ error: "internal server error" });
@@ -190,20 +195,18 @@ export const createTeacher = async (req: Request, res: Response) => {
       qualification,
       specialization,
       department,
-      collegeId,
     } = req.body;
 
     const findEmail = await prisma.teacher.findUnique({ where: { email } });
 
-    if (findEmail)
-      return res.status(404).json({ error: "Email already exists" });
+    if (findEmail) res.status(404).json({ error: "Email already exists" });
 
     const facultyIdExists = await prisma.teacher.findUnique({
       where: { facultyId },
     });
 
     if (facultyIdExists)
-      return res.status(404).json({ error: "Faculty Id already exists" });
+      res.status(404).json({ error: "Faculty Id already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -240,13 +243,15 @@ export const teacherLogin = async (req: Request, res: Response) => {
 
     const checkEmail = await prisma.teacher.findUnique({ where: { email } });
 
-    if (!checkEmail)
-      return res.status(404).json({ error: "invalid email or password" });
+    if (!checkEmail) {
+      res.status(404).json({ error: "invalid email or password" });
+      return;
+    }
 
     const checkPassword = await bcrypt.compare(password, checkEmail.password);
 
     if (!checkPassword) {
-      return res.status(400).json({ error: "invalid email or password" });
+      res.status(400).json({ error: "invalid email or password" });
     }
 
     const { id, role } = checkEmail;

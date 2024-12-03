@@ -1,7 +1,8 @@
-import prisma from "../db/db.config";
 import { Request, Response } from "express";
-import { NotificationType } from "@prisma/client";
+
+import prisma from "../db/db.config";
 import { imageService } from "../services";
+import { NotificationType } from "../types/enums";
 
 export const createClub = async (req: Request, res: Response) => {
   try {
@@ -10,13 +11,14 @@ export const createClub = async (req: Request, res: Response) => {
     const studentId = req.user.id;
 
     if (!name) {
-      return res.status(400).json({
+      res.status(400).json({
         error: "Club name and members are required.",
       });
+      return;
     }
 
     if (members.length === 0) {
-      return res.status(400).json({ error: "Size is zero" });
+      res.status(400).json({ error: "Size is zero" });
     }
 
     const checkStudent = await prisma.student.findUnique({
@@ -24,7 +26,8 @@ export const createClub = async (req: Request, res: Response) => {
     });
 
     if (!checkStudent) {
-      return res.status(404).json({ error: "Unauthorized Access" });
+      res.status(404).json({ error: "Unauthorized Access" });
+      return;
     }
 
     const isClub = await prisma.club.findUnique({
@@ -34,7 +37,7 @@ export const createClub = async (req: Request, res: Response) => {
     console.log(isClub);
 
     if (isClub) {
-      return res.status(409).json({
+      res.status(409).json({
         message: "Club name already exists. Try a different one.",
       });
     }
@@ -79,7 +82,7 @@ export const createClub = async (req: Request, res: Response) => {
       })
     );
 
-    return res.status(201).json({
+    res.status(201).json({
       message: "Club created successfully",
       club: newClub,
       notication: notifications,
@@ -100,19 +103,22 @@ export const updateClub = async (req: Request, res: Response) => {
     });
 
     if (!club) {
-      return res.status(404).json({ error: "Club not found" });
+      res.status(404).json({ error: "Club not found" });
+      return;
     }
 
-    if (club.creatorId !== Number(userId)) {
-      return res.status(403).json({
+    if (club?.creatorId !== Number(userId)) {
+      res.status(403).json({
         error: "Unauthorized: Only the club creator can add members",
       });
+      return;
     }
 
     const profile = req.files?.profile;
 
     if (!profile) {
-      return res.status(400).json({ error: "No profile picture uploaded." });
+      res.status(400).json({ error: "No profile picture uploaded." });
+      return;
     }
 
     const result = await imageService(clubId, prisma.club, profile);
@@ -138,17 +144,20 @@ export const addToClub = async (req: Request, res: Response) => {
     });
 
     if (!club) {
-      return res.status(404).json({ error: "Club not found" });
+      res.status(404).json({ error: "Club not found" });
+      return;
     }
 
-    if (club.creatorId !== Number(creatorId)) {
-      return res
-        .status(403)
-        .json({ error: "Unauthorized: Only the club creator can add members" });
+    if (club?.creatorId !== Number(creatorId)) {
+      res.status(403).json({
+        error: "Unauthorized: Only the club creator can add members",
+      });
+      return;
     }
 
     if (!Array.isArray(members) || members.length === 0) {
-      return res.status(400).json({ error: "No members provided" });
+      res.status(400).json({ error: "No members provided" });
+      return;
     }
 
     const updatedClub = await prisma.club.update({
@@ -163,7 +172,7 @@ export const addToClub = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json(updatedClub);
+    res.status(200).json(updatedClub);
   } catch (error) {
     console.error("error in createClub:", error);
     res.status(404).json({ error: "internal server error" });
@@ -189,7 +198,7 @@ export const getAllClubs = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json(clubs);
+    res.status(200).json(clubs);
   } catch (error) {
     console.error("error in getAllClubs:", error);
     res.status(404).json({ error: "internal server error" });
@@ -204,7 +213,17 @@ export const getClubById = async (req: Request, res: Response) => {
       where: {
         id: clubId,
       },
-      include: {
+      select: {
+        name: true,
+        profilePic: true,
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePic: true,
+          },
+        },
         members: {
           select: {
             studentId: true,
@@ -214,7 +233,11 @@ export const getClubById = async (req: Request, res: Response) => {
           },
         },
         messages: {
-          include: {
+          select: {
+            id: true,
+            content: true,
+            senderId: true,
+            createdAt: true,
             Message: {
               select: {
                 body: true,
@@ -228,33 +251,25 @@ export const getClubById = async (req: Request, res: Response) => {
     });
 
     if (!club) {
-      return res.status(404).json({ error: "Club not found" });
+      res.status(404).json({ error: "Club not found" });
+      return;
     }
 
-    // const membersCount = await prisma.club.count({
-    //   where: {
-    //     id: clubId,
-    //   },
-    // });
-
-    res.status(200).json({
-      ...club,
-      // membersCount,
-    });
+    res.status(200).json(club);
   } catch (error) {
-    console.error("error in getClubById:", error);
+    console.error("Error in getClubById:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
-export const getClubsByMember = async (req: Request, res: Response) => {
+export const getUserClubs = async (req: Request, res: Response) => {
   try {
     const studentId = req.user.id;
 
     const clubs = await prisma.club.findMany({
       where: {
         members: {
-          some: { id: Number(studentId) },
+          some: { id: studentId },
         },
       },
       include: {
@@ -277,10 +292,43 @@ export const getClubsByMember = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json({ clubs });
+    const friends = await prisma.connections.findMany({
+      where: {
+        OR: [
+          { senderId: studentId, status: "ACCEPTED" },
+          { receiverId: studentId, status: "ACCEPTED" },
+        ],
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePic: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePic: true,
+          },
+        },
+      },
+    });
+
+    const uniqueFriends = friends.map((connection:any) =>
+      connection.senderId === studentId
+        ? connection.receiver
+        : connection.sender
+    );
+
+    res.status(200).json({ clubs, friends: uniqueFriends });
   } catch (error) {
-    console.error("Error in getClubsByMember:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("error in getuserCLubs:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -299,9 +347,10 @@ export const deleteClub = async (req: Request, res: Response) => {
     });
 
     if (isClub?.creatorId !== userId) {
-      return res.status(400).json({
+      res.status(400).json({
         error: "Your are Unauthorised to delete the club ",
       });
+      return;
     }
 
     await prisma.joinRequest.deleteMany({
@@ -314,7 +363,7 @@ export const deleteClub = async (req: Request, res: Response) => {
     });
 
     const conversationIds = conversations.map(
-      (conversation) => conversation.id
+      (conversation:any) => conversation.id
     );
 
     await prisma.message.deleteMany({
@@ -331,7 +380,7 @@ export const deleteClub = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json({ message: "Club deleted successfully" });
+    res.status(200).json({ message: "Club deleted successfully" });
   } catch (error) {
     console.error("error in deleteClub:", error);
     res.status(404).json({ error: "internal server error" });
@@ -348,7 +397,8 @@ export const joinClubRequest = async (req: Request, res: Response) => {
     });
 
     if (!club) {
-      return res.status(404).json({ error: "Club not found" });
+      res.status(404).json({ error: "Club not found" });
+      return;
     }
 
     const student = await prisma.student.findUnique({
@@ -372,9 +422,10 @@ export const joinClubRequest = async (req: Request, res: Response) => {
     });
 
     if (existingRequest) {
-      return res.status(409).json({
+      res.status(409).json({
         message: "You have already requested to join this club.",
       });
+      return;
     }
 
     const newRequest = await prisma.joinRequest.create({
@@ -430,13 +481,15 @@ export const getAllJoinRequests = async (req: Request, res: Response) => {
     });
 
     if (!club) {
-      return res.status(404).json({ error: "Club not found" });
+      res.status(404).json({ error: "Club not found" });
+      return;
     }
 
     if (club.creatorId !== req.user.id) {
-      return res.status(403).json({
+      res.status(403).json({
         error: "You are not authorized to view join requests for this club.",
       });
+      return;
     }
 
     const joinRequests = await prisma.joinRequest.findMany({
@@ -446,10 +499,11 @@ export const getAllJoinRequests = async (req: Request, res: Response) => {
     });
 
     if (!joinRequests) {
-      return res.json({ message: "No Joining Requests." });
+      res.json({ message: "No Joining Requests." });
+      return;
     }
 
-    return res.json(joinRequests);
+    res.json(joinRequests);
   } catch (error) {
     console.error("Error in getAllJoinRequests:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -472,7 +526,8 @@ export const acceptJoinRequest = async (req: Request, res: Response) => {
     });
 
     if (!club) {
-      return res.status(404).json({ error: "Club not found" });
+      res.status(404).json({ error: "Club not found" });
+      return;
     }
 
     const joinRequest = await prisma.joinRequest.findUnique({
@@ -483,22 +538,24 @@ export const acceptJoinRequest = async (req: Request, res: Response) => {
     });
 
     if (!joinRequest) {
-      return res.status(404).json({ error: "Join request not found" });
+      res.status(404).json({ error: "Join request not found" });
+      return;
     }
 
     if (joinRequest.club.creatorId !== userId) {
-      return res
-        .status(403)
-        .json({ error: "You are not authorized to accept this join request." });
+      res.status(403).json({
+        error: "You are not authorized to accept this join request.",
+      });
+      return;
     }
 
     if (joinRequest.status === "APPROVED") {
-      return res
-        .status(400)
-        .json({ message: "This join request has already been accepted." });
+      res.status(400).json({
+        message: "This join request has already been accepted.",
+      });
+      return;
     }
 
-    // Approve the join request
     const updatedRequest = await prisma.joinRequest.update({
       where: { id: joinRequest.id },
       data: {
@@ -506,7 +563,6 @@ export const acceptJoinRequest = async (req: Request, res: Response) => {
       },
     });
 
-    // Add the student as a member of the club
     await prisma.club.update({
       where: { id: joinRequest.clubId },
       data: {
@@ -518,14 +574,14 @@ export const acceptJoinRequest = async (req: Request, res: Response) => {
 
     const notification = await prisma.notification.create({
       data: {
-        recipientId: joinRequest.studentId, // Recipient is the student
+        recipientId: joinRequest.studentId,
         type: NotificationType.CLUB_REQUEST_ACCEPTED,
-        content: `Your request to join the club "${club.name}" has been accepted.`,
-        senderId: userId, // Sender is the club creator
+        content: `Your request to join the club "${club?.name}" has been accepted.`,
+        senderId: userId,
       },
     });
 
-    return res.json({
+    res.json({
       message: "Join request accepted successfully",
       request: updatedRequest,
       notification: notification,
@@ -547,8 +603,9 @@ export const userCreatedClubs = async (req: Request, res: Response) => {
     });
 
     if (!userId) {
-      return res.status(404).json({ error: "User not found" });
-    }
+      res.status(404).json({ error: "User not found" });
+      return;
+    } 
 
     const createdClubs = await prisma.club.findMany({
       where: {
@@ -556,7 +613,7 @@ export const userCreatedClubs = async (req: Request, res: Response) => {
       },
     });
 
-    return res.json(createdClubs);
+    res.json(createdClubs);
   } catch (error) {
     console.error("Error in userCreatedClubs:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -575,6 +632,22 @@ export const removeMember = async (req: Request, res: Response) => {
   try {
   } catch (error) {
     console.error("Error in removeMember:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const removeMessages = async (req: Request, res: Response) => {
+  try {
+    const { clubId } = req.params;
+
+    await prisma.message.deleteMany({
+      where: {
+        id: clubId,
+      },
+    });
+    res.status(200).json({ message: "deleted" });
+  } catch (error) {
+    console.error("Error in removeMessages:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

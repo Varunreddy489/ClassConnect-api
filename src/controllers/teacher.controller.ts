@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 
 import prisma from "../db/db.config";
 import { changePassword } from "../services/auth.service";
-import { handleForgotPassword } from "../services/mail.service";
+import { handleForgotPassword } from "../services/password.service";
 
 export const forgotPasswordTeacher = async (req: Request, res: Response) => {
   try {
