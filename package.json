@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nodemon ./src/server.ts",
     "build": "tsc && npm install && prisma generate --schema=./prisma/schema.prisma",
-    "start": "node ./dist/server.js"
+    "start": "node ./dist/src/server.js"
   },
   "keywords": [],
   "author": "",
@@ -41,7 +41,7 @@
     "@types/express-fileupload": "^1.5.1",
     "@types/express-redis-cache": "^1.1.5",
     "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^18.19.61",
+    "@types/node": "^18.19.67",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.16",
     "@types/uuid": "^10.0.0",
