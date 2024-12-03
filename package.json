@@ -4,7 +4,7 @@
   "main": "./src/server.ts",
   "scripts": {
     "dev": "nodemon ./src/server.ts",
-    "build": "npx tsc -p .",
+    "build": "tsc && npm install && prisma generate --schema=./prisma/schema.prisma",
     "start": "node ./dist/server.js"
   },
   "keywords": [],
@@ -25,11 +25,13 @@
     "express-rate-limit": "^7.4.1",
     "express-redis-cache": "^1.1.3",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.9.15",
     "prisma": "^5.21.1",
     "socket.io": "^4.8.1",
     "uuid": "^10.0.0",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -38,11 +40,14 @@
     "@types/dotenv": "^8.2.3",
     "@types/express": "^5.0.0",
     "@types/express-fileupload": "^1.5.1",
+    "@types/express-redis-cache": "^1.1.5",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^18.19.61",
+    "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.16",
     "@types/socket.io": "^3.0.2",
     "@types/uuid": "^10.0.0",
+    "@types/winston": "^2.4.4",
     "nodemon": "^2.0.22",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
