@@ -1,20 +1,17 @@
 import prisma from "../db/db.config";
 import { Server } from "socket.io";
-
-enum Role {
-  ADMIN = "ADMIN",
-  STUDENT = "STUDENT",
-  TEACHER = "TEACHER",
-}
+import { getConnectedUsers, getIo } from "../socket/webSocket";
 
 export const sendMessage = async (
   clubId: string,
   userId: number,
-  role: Role,
-  content: string,
-  io: Server
+  content: string
 ) => {
   try {
+    if (!content) {
+      throw new Error("Message content is required");
+    }
+
     const club = await prisma.club.findUnique({
       where: { id: clubId },
     });
@@ -52,10 +49,14 @@ export const sendMessage = async (
       },
     });
 
-    io.to(clubId).emit("newMessage", message);
+    const io = getIo();
+
+    io.to(conversation.id.toString()).emit("newMessage", message); 
 
     return message;
   } catch (error) {
     throw new Error("Error sending message");
   }
 };
+
+// export const getAllMessages=async()

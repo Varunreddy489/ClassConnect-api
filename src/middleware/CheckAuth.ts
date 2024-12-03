@@ -40,7 +40,7 @@ export const checkIsAuth = async (
     console.log(token);
 
     if (!token) {
-      return res.status(400).json({
+      res.status(400).json({
         error: "Unauthorised - No token provided",
       });
     }
@@ -51,7 +51,7 @@ export const checkIsAuth = async (
     ) as DecodedToken;
 
     if (!decodedToken) {
-      return res.status(400).json({
+      res.status(400).json({
         error: "Unauthorised - Invalid Token",
       });
     }
@@ -68,7 +68,8 @@ export const checkIsAuth = async (
     });
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      res.status(404).json({ error: "User not found" });
+      return;
     }
 
     req.user = {
@@ -79,16 +80,16 @@ export const checkIsAuth = async (
     next();
   } catch (error) {
     if (error instanceof TokenExpiredError) {
-      return res.status(401).json({
+      res.status(401).json({
         error: "Unauthorized - Token has expired",
       });
       console.error("Error in middleware:", error);
     } else if (error instanceof JsonWebTokenError) {
-      return res.status(401).json({ error: "Unauthorized - Invalid Token" });
+      res.status(401).json({ error: "Unauthorized - Invalid Token" });
       console.error("Error in middleware:", error);
     } else {
       console.error("error in checkIsAuth:", error);
-      return res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ error: "Internal Server Error" });
     }
   }
 };

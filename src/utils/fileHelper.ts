@@ -2,8 +2,7 @@ import { UploadedFile } from "express-fileupload";
 import { supportedTypes } from "../config/supportedTypes";
 import { bytesToMb, generateRandomNumber } from "./imageHelper";
 import path from "node:path";
-import fs from 'node:fs';
-
+import fs from "node:fs";
 
 export const fileValidator = (size: number, mime: string) => {
   if (bytesToMb(size) > 10) {
@@ -14,43 +13,11 @@ export const fileValidator = (size: number, mime: string) => {
   return null;
 };
 
-// export const uploadFile =  async (file: UploadedFile | UploadedFile[]): Promise<string | null>  => {
-
-//   try {
-//     if (!file || !file.name) {
-//       throw new Error("Invalid image object");
-//     }
-
-//     const validationError = fileValidator(file.size, file.mimetype);
-//     if (validationError) {
-//       throw new Error(validationError);
-//     }
-
-//     const ext = path.extname(file.name);
-//     const fileName = generateRandomNumber() + ext;
-//     const uploadPath = path.join(process.cwd(), "public", "files", fileName);
-
-//     await new Promise((resolve, reject) => {
-//       file.mv(uploadPath, (err: Error) => {
-//         if (err) {
-//           reject("file upload failed: " + err.message);
-//         } else {
-//           resolve(null);
-//         }
-//       });
-//     });
-
-//     return fileName;
-//   } catch (error) {
-//     console.error("Error during file upload:", error);
-//     return null;
-//   }
-// };
-
-
-export const uploadFile = async (file: UploadedFile | UploadedFile[]): Promise<string | null> => {
+export const uploadFile = async (
+  file: UploadedFile | UploadedFile[]
+): Promise<string | null> => {
   try {
-    const files = Array.isArray(file) ? file : [file]; 
+    const files = Array.isArray(file) ? file : [file];
     const fileNames: string[] = [];
 
     for (const f of files) {
@@ -79,5 +46,3 @@ export const uploadFile = async (file: UploadedFile | UploadedFile[]): Promise<s
     return null;
   }
 };
-
-
