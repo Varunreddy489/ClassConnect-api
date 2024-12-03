@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -44,40 +38,59 @@ model Student {
   resetPasswordExpiresAt DateTime       @default(now())
   clubs                  Club[]         @relation("ClubMembership")
   createdClubs           Club[]         @relation("ClubCreator")
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
   Message                Message[]
   JoinRequest            JoinRequest[]
   Notification           Notification[]
   notifications          Notification[] @relation("StudentNotifications")
+
+  // connections
+  connectionsSent     Connections[] @relation("ConnectionsSent")
+  connectionsReceived Connections[] @relation("ConnectionsReceived")
+  connections         Student[]     @relation("AcceptedConnections")
+  connectedBy         Student[]     @relation("AcceptedConnections")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-enum NotificationType {
-  JOIN_REQUEST
-  CLUB_REQUEST_ACCEPTED
-  CLUB_REQUEST_REJECTED
-  REMOVED_FROM_CLUB
-  EVENTS
-  CLUB_CREATED
-  GENERAL_ANNOUNCEMENT
+model Connections {
+  id         Int              @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  status     ConnectionStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  sender        Student        @relation("ConnectionsSent", fields: [senderId], references: [id])
+  receiver      Student        @relation("ConnectionsReceived", fields: [receiverId], references: [id])
+  notifications Notification[] @relation("NotificationToConnection") // Opposite relation field
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 model Notification {
-  id            String           @id @default(cuid())
-  type          NotificationType
+  id            String       @id @default(cuid())
+  type          String?
   content       String
   recipientId   Int
-  isRead        Boolean          @default(false)
+  isRead        Boolean      @default(false)
   senderId      Int?
   clubId        String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  student       Student?         @relation("StudentNotifications", fields: [recipientId], references: [id])
-  Student       Student?         @relation(fields: [studentId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  student       Student?     @relation("StudentNotifications", fields: [recipientId], references: [id])
+  Student       Student?     @relation(fields: [studentId], references: [id])
   studentId     Int?
   joinRequestId Int?
-  joinRequest   JoinRequest?     @relation("NotificationToJoinRequest", fields: [joinRequestId], references: [id])
-  club          Club?            @relation(fields: [clubId], references: [id])
+  joinRequest   JoinRequest? @relation("NotificationToJoinRequest", fields: [joinRequestId], references: [id])
+  connectionId  Int?
+  connection    Connections? @relation("NotificationToConnection", fields: [connectionId], references: [id])
+
+  club Club? @relation(fields: [clubId], references: [id])
 }
 
 model JoinRequest {
@@ -88,8 +101,8 @@ model JoinRequest {
   club          Club           @relation(fields: [clubId], references: [id])
   status        JoinStatus     @default(PENDING)
   createdAt     DateTime       @default(now())
+  notifications Notification[] @relation("NotificationToJoinRequest") 
   updatedAt     DateTime       @updatedAt
-  notifications Notification[] @relation("NotificationToJoinRequest") // Relation name matches Notification model
 }
 
 model Club {
@@ -107,6 +120,7 @@ model Club {
   updatedAt    DateTime        @default(now())
   JoinRequest  JoinRequest[]
   Notification Notification[]
+  // Events       Events[]
 }
 
 model Conversations {
@@ -135,6 +149,21 @@ model Message {
   fileUrl        String?
   fileType       String?
 }
+
+// model Events {
+//   id          String   @id @default(cuid())
+//   title       String
+//   description String
+//   pic         String
+//   startDate   DateTime
+//   endDate     DateTime
+//   location    String
+
+//   clubId      String
+//   club        Club     @relation(fields: [clubId], references: [id])
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+// }
 
 model Admin {
   id                     Int      @id @default(autoincrement())
