@@ -12,7 +12,8 @@ export const handleForgotPassword = async (
     const user = await model.findUnique({ where: { email } });
 
     if (!user) {
-      return res.status(404).json({ error: "Email doesn't exist" });
+      res.status(404).json({ error: "Email doesn't exist" });
+      return;
     }
 
     const resetToken = crypto.randomBytes(20).toString("hex");
@@ -34,14 +35,12 @@ export const handleForgotPassword = async (
 
     await sendEmail(payload);
 
-    return res.status(200).json({
+    res.status(200).json({
       message: "Check your email for the reset link.",
-      payload
+      payload,
     });
   } catch (error) {
     console.error("Error in forgot password:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
-

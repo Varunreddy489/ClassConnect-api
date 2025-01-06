@@ -19,6 +19,12 @@ enum JoinStatus {
   REJECTED
 }
 
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 model Student {
   id                     Int            @id @default(autoincrement())
   name                   String
@@ -43,11 +49,28 @@ model Student {
   Notification           Notification[]
   notifications          Notification[] @relation("StudentNotifications")
 
-  // connections
   connectionsSent     Connections[] @relation("ConnectionsSent")
   connectionsReceived Connections[] @relation("ConnectionsReceived")
   connections         Student[]     @relation("AcceptedConnections")
   connectedBy         Student[]     @relation("AcceptedConnections")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Events    Events[]
+}
+
+model Events {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  profilePic  String?
+  startDate   DateTime
+  endDate     DateTime
+  location    String
+
+  creatorId  Int
+  creator    Student @relation(fields: [creatorId], references: [id])
+  department String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -66,17 +89,11 @@ model Connections {
   notifications Notification[] @relation("NotificationToConnection") // Opposite relation field
 }
 
-enum ConnectionStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-}
-
 model Notification {
   id            String       @id @default(cuid())
   type          String?
   content       String
-  recipientId   Int
+  recipientId   Int?
   isRead        Boolean      @default(false)
   senderId      Int?
   clubId        String?
@@ -91,18 +108,6 @@ model Notification {
   connection    Connections? @relation("NotificationToConnection", fields: [connectionId], references: [id])
 
   club Club? @relation(fields: [clubId], references: [id])
-}
-
-model JoinRequest {
-  id            Int            @id @default(autoincrement())
-  studentId     Int
-  student       Student        @relation(fields: [studentId], references: [id])
-  clubId        String
-  club          Club           @relation(fields: [clubId], references: [id])
-  status        JoinStatus     @default(PENDING)
-  createdAt     DateTime       @default(now())
-  notifications Notification[] @relation("NotificationToJoinRequest") 
-  updatedAt     DateTime       @updatedAt
 }
 
 model Club {
@@ -120,7 +125,6 @@ model Club {
   updatedAt    DateTime        @default(now())
   JoinRequest  JoinRequest[]
   Notification Notification[]
-  // Events       Events[]
 }
 
 model Conversations {
@@ -136,34 +140,23 @@ model Conversations {
 }
 
 model Message {
-  id             String        @id @default(cuid())
-  conversationId Int
-  conversation   Conversations @relation(fields: [conversationId], references: [id])
-  senderId       Int
-  sender         Student       @relation(fields: [senderId], references: [id])
-  body           String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  teacherId      Int?
-  Teacher        Teacher?      @relation(fields: [teacherId], references: [id])
-  fileUrl        String?
-  fileType       String?
+  id               String        @id @default(cuid())
+  conversationId   Int
+  conversation     Conversations @relation(fields: [conversationId], references: [id])
+  senderId         Int
+  sender           Student       @relation(fields: [senderId], references: [id])
+  body             String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  teacherId        Int?
+  Teacher          Teacher?      @relation(fields: [teacherId], references: [id])
+  fileUrl          String?
+  fileType         String?
+  replyToMessageId String?
+  replyToMessage   Message?      @relation("ReplyTo", fields: [replyToMessageId], references: [id])
+  replies          Message[]     @relation("ReplyTo")
+  isSeen           Boolean       @default(false)
 }
-
-// model Events {
-//   id          String   @id @default(cuid())
-//   title       String
-//   description String
-//   pic         String
-//   startDate   DateTime
-//   endDate     DateTime
-//   location    String
-
-//   clubId      String
-//   club        Club     @relation(fields: [clubId], references: [id])
-//   createdAt   DateTime @default(now())
-//   updatedAt   DateTime @updatedAt
-// }
 
 model Admin {
   id                     Int      @id @default(autoincrement())
@@ -214,4 +207,16 @@ model Teacher {
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
   Message                Message[]
+}
+
+model JoinRequest {
+  id            Int            @id @default(autoincrement())
+  studentId     Int
+  student       Student        @relation(fields: [studentId], references: [id])
+  clubId        String
+  club          Club           @relation(fields: [clubId], references: [id])
+  status        JoinStatus     @default(PENDING)
+  createdAt     DateTime       @default(now())
+  notifications Notification[] @relation("NotificationToJoinRequest")
+  updatedAt     DateTime       @updatedAt
 }

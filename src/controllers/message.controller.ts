@@ -1,10 +1,9 @@
+import { createClient } from "@redis/client";
 import { Request, Response } from "express";
 
 import prisma from "../db/db.config";
-import { getIo } from "../socket/webSocket";
 import { UploadedFile } from "express-fileupload";
 import { fileService } from "../services/file.service";
-import redisCache from "../db/redis.config";
 
 enum Role {
   ADMIN = "ADMIN",
@@ -12,10 +11,65 @@ enum Role {
   TEACHER = "TEACHER",
 }
 
+const redisClient = createClient();
+const DEFAULT_EXPIRATION = Number(process.env.DEFAULT_EXPIRATION) || 3600;
+
+export const getAllMessages = async (req: Request, res: Response) => {
+  try {
+    const { clubId } = req.params;
+
+    // Check if the club exists
+    const club = await prisma.club.findUnique({
+      where: { id: clubId },
+    });
+
+    if (!club) {
+      res.status(404).json({ error: "Club not found" });
+      return;
+    }
+
+    // const cacheKey = `club_messages_${clubId}`;
+
+    // // Check if messages are cached
+    // const cachedData = await redisClient.get(cacheKey);
+    // if (cachedData != null) {
+    //   res.status(200).json(JSON.parse(cachedData));
+    //   return;
+    // }
+
+    // Fetch messages from database
+    const messages = await prisma.message.findMany({
+      where: {
+        conversation: { clubId: clubId },
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            profilePic: true,
+            studentId: true,
+          },
+        },
+      },
+    });
+
+    // Cache the fetched messages
+    // await redisClient.setEx(cacheKey, DEFAULT_EXPIRATION, JSON.stringify(messages));
+
+    // Respond with the messages
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error in getAllMessages:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 export const sendMessages = async (req: Request, res: Response) => {
   try {
     const { clubId } = req.params;
-    const { content } = req.body;
+    const { content, replyToMessageId } = req.body;
 
     const userId = req.user.id;
 
@@ -57,24 +111,27 @@ export const sendMessages = async (req: Request, res: Response) => {
         conversationId: conversation.id,
         senderId: userId,
         body: content,
+        replyToMessageId,
+        isSeen: false,
       },
     });
 
-    const io = getIo();
-    const roomExists = io.sockets.adapter.rooms.get(clubId);
+    // const io = getIo();
+    // const roomExists = io.sockets.adapter.rooms.get(clubId);
 
-    if (!roomExists) {
-      console.warn(`Room ${clubId} does not exist.`);
-    }
+    // if (!roomExists) {
+    //   console.warn(`Room ${clubId} does not exist.`);
+    // }
 
-    console.warn("Emitting message to room:", clubId);
+    // console.warn("Emitting message to room:", clubId);
 
-    io.to(clubId).emit("new_message", {
-      id: message.id,
-      body: message.body,
-      senderId: userId,
-      createdAt: message.createdAt,
-    });
+    // io.to(clubId).emit("new_message", {
+    //   id: message.id,
+
+    //   body: message.body,
+    //   senderId: userId,
+    //   createdAt: message.createdAt,
+    // });
 
     res.status(201).json({ message });
   } catch (error) {
@@ -83,50 +140,18 @@ export const sendMessages = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllMessages = async (req: Request, res: Response) => {
+export const markMessageAsSeen = async (req: Request, res: Response) => {
   try {
-    const { clubId } = req.params;
+    const { messageIds } = req.body;
 
-  //  redisCache.get(`/api/club/message/${clubId}`, (err: any, entries: any[]) => {
-  //     if (err) {
-  //       console.error("Redis cache error:", err);
-  //       return;
-  //     }
-
-  //     // Check if there's cached data
-  //     if (entries.length > 0) {
-  //       // If cache exists, send it back
-  //       res.json(JSON.parse(entries[0].body));
-  //       console.warn("Cache hit:", entries[0]);
-  //       return;
-  //     }
-    const club = await prisma.club.findUnique({
-      where: { id: clubId },
+    const message = await prisma.message.updateMany({
+      where: { id: { in: messageIds } },
+      data: { isSeen: true },
     });
 
-    if (!club) {
-      res.status(404).json({ error: "Club not found" });
-    }
-
-    const messages = await prisma.message.findMany({
-      where: {
-        conversation: { clubId: clubId },
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            profilePic: true,
-            studentId: true,
-          },
-        },
-      },
-    });
-
-    res.status(200).json({ messages });
+    res.status(200).json({ message });
   } catch (error) {
-    console.error("Error in getAllMessages:", error);
+    console.error("Error in markMessageAsSeen:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -34,5 +34,4 @@ router.post("/teacher/changePassword/:token", passwordChangeTeacher);
 router.post("/student/forgotPassword", forgotPasswordStudent);
 router.post("/teacher/forgotPassword", forgotPasswordTeacher);
 
-
-export {router as authRouter}
+export { router as authRouter };

@@ -12,3 +12,4 @@ export const forgotPasswordAdmin = async (req: Request, res: Response) => {
     res.status(404).json({ error: "internal server error" });
   }
 };
+

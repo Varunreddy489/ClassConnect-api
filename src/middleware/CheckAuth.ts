@@ -43,6 +43,7 @@ export const checkIsAuth = async (
       res.status(400).json({
         error: "Unauthorised - No token provided",
       });
+      return;
     }
 
     const decodedToken = jwt.verify(
@@ -54,6 +55,7 @@ export const checkIsAuth = async (
       res.status(400).json({
         error: "Unauthorised - Invalid Token",
       });
+      return;
     }
 
     const user = await prisma.student.findUnique({
@@ -84,12 +86,15 @@ export const checkIsAuth = async (
         error: "Unauthorized - Token has expired",
       });
       console.error("Error in middleware:", error);
+      return;
     } else if (error instanceof JsonWebTokenError) {
       res.status(401).json({ error: "Unauthorized - Invalid Token" });
       console.error("Error in middleware:", error);
+      return;
     } else {
       console.error("error in checkIsAuth:", error);
       res.status(500).json({ error: "Internal Server Error" });
+      return;
     }
   }
 };

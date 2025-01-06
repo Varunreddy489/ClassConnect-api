@@ -43,7 +43,9 @@ export const getSuggestedConnections = async (req: Request, res: Response) => {
         name: true,
         email: true,
         profilePic: true,
+        studentId: true,
       },
+      take: 4,
     });
 
     res.status(200).json(notConnectedStudents);

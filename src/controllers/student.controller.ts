@@ -8,33 +8,7 @@ import {
 } from "../services";
 import prisma from "../db/db.config";
 
-export const forgotPasswordStudent = async (req: Request, res: Response) => {
-  try {
-    const { email } = req.body;
 
-    await handleForgotPassword(prisma.student, email, res);
-  } catch (error) {
-    console.log("error in forgotPasswordStudent:", error);
-    res.status(404).json({ error: "internal server error" });
-  }
-};
-
-export const passwordChangeStudent = async (req: Request, res: Response) => {
-  try {
-    const { token } = req.params;
-    const { newPassword, confirmPassword } = req.body;
-    await changePassword(
-      prisma.student,
-      token,
-      newPassword,
-      confirmPassword,
-      res
-    );
-  } catch (error) {
-    console.log("error in forgotPasswordStudent:", error);
-    res.status(404).json({ error: "internal server error" });
-  }
-};
 
 export const updateProfilePic = async (req: Request, res: Response) => {
   try {
@@ -99,5 +73,36 @@ export const getAllStudents = async (req: Request, res: Response) => {
   } catch (error) {
     console.log("error in getAllStudents:", error);
     res.status(404).json({ error: "internal server error" });
+  }
+};
+
+export const getStudentById = async (req: Request, res: Response) => {
+  try {
+    const studentId = req.params.studentId;
+
+    if (!studentId) {
+      res.status(400).json({ error: "studentId is required" });
+      return;
+    }
+
+    const student = await prisma.student.findUnique({
+      where: {
+        studentId: studentId,
+      },
+      include:{
+        clubs: true,
+        connections:true,
+      }
+    });
+
+    if (!student) {
+      res.status(404).json({ error: "Student not found" });
+      return;
+    }
+
+    res.status(200).json(student);
+  } catch (error) {
+    console.log("error in getStudentById:", error);
+    res.status(404).json({ error: "Internal server error" });
   }
 };

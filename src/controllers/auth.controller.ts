@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import prisma from "../db/db.config";
 import { genTokenAndCookie } from "../utils/genToken";
 import { Request, Response } from "express";
+import { changePassword, handleForgotPassword } from "../services";
 
 export const createAdmin = async (req: Request, res: Response) => {
   try {
@@ -271,6 +272,35 @@ export const teacherLogout = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error: any) {
     console.log("error in logout:", error.message);
+    res.status(404).json({ error: "internal server error" });
+  }
+};
+
+
+export const forgotPasswordStudent = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    await handleForgotPassword(prisma.student, email, res);
+  } catch (error) {
+    console.log("error in forgotPasswordStudent:", error);
+    res.status(404).json({ error: "internal server error" });
+  }
+};
+
+export const passwordChangeStudent = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const { newPassword, confirmPassword } = req.body;
+    await changePassword(
+      prisma.student,
+      token,
+      newPassword,
+      confirmPassword,
+      res
+    );
+  } catch (error) {
+    console.log("error in forgotPasswordStudent:", error);
     res.status(404).json({ error: "internal server error" });
   }
 };

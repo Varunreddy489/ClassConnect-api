@@ -20,11 +20,13 @@ export const changePassword = async (
     });
 
     if (!user) {
-      return res.status(400).json({ error: "Invalid or expired token" });
+      res.status(400).json({ error: "Invalid or expired token" });
+      return;
     }
 
     if (newPassword !== confirmPassword) {
-      return res.status(400).json({ error: "Passwords do not match" });
+      res.status(400).json({ error: "Passwords do not match" });
+      return;
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -46,7 +48,7 @@ export const changePassword = async (
       body: "Your password has been changed successfully. Please try to use long secured password.",
     };
 
-    await sendEmail(payload)
+    await sendEmail(payload);
 
     return res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {

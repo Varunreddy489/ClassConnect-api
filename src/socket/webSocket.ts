@@ -1,6 +1,6 @@
 import { Server, Socket } from "socket.io";
 
-let io: Server;
+let io: any;
 const connectedUsers = new Map<string, string>();
 const userActivities = new Map<string, string>();
 
@@ -12,13 +12,13 @@ export const initializeSocket = (httpServer: any) => {
       credentials: true,
     },
   });
-
+ 
   console.warn("Current rooms:", Array.from(io.sockets.adapter.rooms.keys()));
 
-  io.on("connection", (socket: Socket) => {
+  io.on("connection", (socket: any) => {
     console.log(`Socket connected: ${socket.id}`);
 
-    socket.on("user_connected", (data: { userId: string;  }) => {
+    socket.on("user_connected", (data: { userId: string }) => {
       const { userId } = data;
       if (!userId) {
         return socket.disconnect(true).emit("error", "User ID is required");

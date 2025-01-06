@@ -14,6 +14,7 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.0.1",
+    "@redis/client": "^1.6.0",
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
@@ -29,6 +30,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.15",
     "prisma": "^6.0.1",
+    "redis": "^4.7.0",
     "socket.io": "^4.8.1",
     "uuid": "^10.0.0",
     "web-push": "^3.6.7",
